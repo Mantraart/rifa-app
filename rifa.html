@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Rifa Cadena de Oro</title>
+
+<style>
+body {
+    font-family: Arial, sans-serif;
+    background: #0f0f0f;
+    color: white;
+    margin: 0;
+}
+
+.container {
+    display: flex;
+    height: 100vh;
+}
+
+/* GRID */
+.grid {
+    display: grid;
+    grid-template-columns: repeat(10, 60px);
+    gap: 8px;
+    padding: 20px;
+}
+
+.cell {
+    width: 60px;
+    height: 60px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.disponible { background: #2c2c2c; }
+.debe { background: #ff4d4d; }
+.pago { background: #00c853; color: black; } /* VERDE */
+
+/* PANEL */
+.panel {
+    flex: 1;
+    background: #1a1a1a;
+    padding: 20px;
+    border-left: 2px solid gold;
+}
+
+.panel h2 {
+    color: gold;
+}
+
+input, select {
+    width: 100%;
+    padding: 10px;
+    margin-top: 10px;
+    border-radius: 6px;
+    border: none;
+}
+
+button {
+    margin-top: 15px;
+    padding: 10px;
+    width: 100%;
+    border: none;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.guardar { background: gold; color: black; }
+.reset { background: red; color: white; }
+.descargar { background: #2196f3; color: white; }
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="grid" id="grid"></div>
+
+    <div class="panel">
+        <h2>🎟️ Detalle del Número</h2>
+
+        <p><strong>Número:</strong> <span id="numero">--</span></p>
+
+        <label>Nombre</label>
+        <input type="text" id="nombre">
+
+        <label>Estado</label>
+        <select id="estado">
+            <option value="debe">Debe</option>
+            <option value="pago">Pagó</option>
+        </select>
+
+        <button class="guardar" onclick="guardarDatos()">Guardar</button>
+
+        <button class="descargar" onclick="descargarListado()">Descargar listado</button>
+
+        <button class="reset" onclick="resetData()">Reiniciar Todo</button>
+    </div>
+
+</div>
+
+<script>
+
+const inicial = {
+    "07": {nombre:"Claudio", estado:"debe"},
+    "08": {nombre:"Juanda", estado:"debe"},
+    "12": {nombre:"Calero Guillermo", estado:"debe"},
+    "19": {nombre:"Aixa", estado:"debe"},
+    "22": {nombre:"Carlos", estado:"debe"},
+    "24": {nombre:"Juandi", estado:"debe"},
+    "27": {nombre:"Calero Flaco", estado:"debe"},
+    "31": {nombre:"Donna", estado:"debe"},
+    "67": {nombre:"Fabel", estado:"debe"},
+    "72": {nombre:"Tio Fernando", estado:"debe"},
+    "73": {nombre:"Claudia - Julio", estado:"debe"},
+    "77": {nombre:"Aura Raquel", estado:"debe"},
+    "79": {nombre:"Lina Cadena", estado:"debe"},
+    "81": {nombre:"Andres Chambary", estado:"debe"},
+    "88": {nombre:"Aixa", estado:"debe"},
+    "93": {nombre:"Claudia", estado:"debe"}
+};
+
+let datos = JSON.parse(localStorage.getItem("rifa")) || inicial;
+let seleccionado = null;
+
+const grid = document.getElementById("grid");
+
+function guardarStorage() {
+    localStorage.setItem("rifa", JSON.stringify(datos));
+}
+
+function crearGrid() {
+    grid.innerHTML = "";
+
+    for (let i = 0; i < 100; i++) {
+        let num = i.toString().padStart(2, "0");
+
+        let cell = document.createElement("div");
+        cell.classList.add("cell");
+
+        if (datos[num]) {
+            cell.classList.add(datos[num].estado);
+        } else {
+            cell.classList.add("disponible");
+        }
+
+        cell.textContent = num;
+        cell.onclick = () => seleccionar(num);
+
+        grid.appendChild(cell);
+    }
+}
+
+function seleccionar(num) {
+    seleccionado = num;
+    document.getElementById("numero").textContent = num;
+
+    if (datos[num]) {
+        document.getElementById("nombre").value = datos[num].nombre;
+        document.getElementById("estado").value = datos[num].estado;
+    } else {
+        document.getElementById("nombre").value = "";
+        document.getElementById("estado").value = "debe";
+    }
+}
+
+function guardarDatos() {
+    if (!seleccionado) return;
+
+    let nombre = document.getElementById("nombre").value;
+    let estado = document.getElementById("estado").value;
+
+    if (nombre === "") {
+        delete datos[seleccionado];
+    } else {
+        datos[seleccionado] = { nombre, estado };
+    }
+
+    guardarStorage();
+    crearGrid();
+}
+
+function resetData() {
+    if (confirm("¿Seguro que quieres borrar todo?")) {
+        localStorage.removeItem("rifa");
+        datos = {};
+        crearGrid();
+    }
+}
+
+/* NUEVA FUNCIÓN DESCARGA */
+function descargarListado() {
+    let texto = "Numero - Nombre - Estado\n";
+
+    for (let i = 0; i < 100; i++) {
+        let num = i.toString().padStart(2, "0");
+
+        if (datos[num]) {
+            texto += `${num} - ${datos[num].nombre} - ${datos[num].estado}\n`;
+        } else {
+            texto += `${num} - Disponible\n`;
+        }
+    }
+
+    let blob = new Blob([texto], { type: "text/plain" });
+    let link = document.createElement("a");
+
+    link.href = URL.createObjectURL(blob);
+    link.download = "listado_rifa.txt";
+    link.click();
+}
+
+crearGrid();
+
+</script>
+
+</body>
+</html>
